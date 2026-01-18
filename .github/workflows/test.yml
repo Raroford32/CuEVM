@@ -55,7 +55,7 @@ jobs:
               python3 -m ensurepip --upgrade
               python3 -m pip install --no-cache-dir --upgrade cmake==4.2.1
               export PATH=\"/root/.local/bin:\$PATH\"
-              cmake -S . -B build -DTESTS=OFF -DGPU=ON -DCPU=OFF -DCUDA_COMPUTE_CAPABILITY=103 -DENABLE_EIP_3155_OPTIONAL=OFF -DENABLE_EIP_3155=ON
+              cmake -S . -B build -DTESTS=OFF -DGPU=ON -DCPU=OFF -DCUDA_COMPUTE_CAPABILITY=\"103-real;103-virtual\" -DENABLE_EIP_3155_OPTIONAL=OFF -DENABLE_EIP_3155=ON
               cmake --build build -j 8
           "
 

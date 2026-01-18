@@ -1,0 +1,14 @@
+FROM nvcr.io/nvidia/pytorch:25.12-py3
+
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    ca-certificates \
+    git \
+    libgmp-dev \
+    libcjson-dev \
+    ninja-build \
+  && rm -rf /var/lib/apt/lists/*
+
+RUN python3 -m ensurepip --upgrade \
+  && python3 -m pip install --no-cache-dir --upgrade cmake==4.2.1
+
+WORKDIR /workspaces/CuEVM

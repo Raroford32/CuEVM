@@ -5,7 +5,7 @@ Cuda implementation of EVM bytecode executor
 ## Prerequisites
 - CUDA Toolkit 13.1 Update 1+ (C++20 support, SM 103 for NVIDIA B300)
 - CMake 4.2.1+ (install from Kitware or `python3 -m pip install --user cmake==4.2.1`)
-- A CUDA-capable GPU (CUDA compute capability 10.3/SM 103 for B300; adjust for other GPUs)
+- A CUDA-capable GPU (CUDA compute capability 10.3/SM 103 for B300; use 103-real;103-virtual for SASS + PTX)
 - A C++ compiler compatible with the CUDA Toolkit (GCC 11/12 or Clang 16)
 - For docker image, you don't need the above but the system with docker installed
 
@@ -18,11 +18,11 @@ There are two methods, one requires installing all prequisited in the system, th
 Building on Ubuntu (with sudo):
 * Setup required libraries: `sudo apt install libgmp-dev`
 * Setup cJSON: `sudo apt install libcjson-dev`
-* Use cmake to build the binary (Adjust `-DCUDA_COMPUTE_CAPABILITY=103` according to your GPU compute capability number):
+* Use cmake to build the binary (Adjust `-DCUDA_COMPUTE_CAPABILITY="103-real;103-virtual"` according to your GPU compute capability number):
 
 ``` bash
 cmake -S . -B build -DTESTS=OFF -DGPU=ON -DCPU=OFF \
-    -DCUDA_COMPUTE_CAPABILITY=103
+    -DCUDA_COMPUTE_CAPABILITY="103-real;103-virtual"
     -DENABLE_EIP_3155_OPTIONAL=OFF \
     -DENABLE_EIP_3155=ON \
     -DENABLE_PAIRING_CODE=ON
@@ -34,12 +34,16 @@ Building without sudo is also possible with extra configuration and modification
 
 #### Building using docker image
 
-* Pull the docker image first: `docker pull augustus/goevmlab-cuevm:20241216` (ensure it contains CUDA 13.1 Update 1+)
-* Run and mount the current code folder `docker run -it -v $(pwd):/workspaces/CuEVM augustus/goevmlab-cuevm:20241216`
-* Inside the docker container, you can build the code using the same commands as above (Adjust `-DCUDA_COMPUTE_CAPABILITY=103` according to your GPU compute capability number):
+* Recommended production baseline: NVIDIA NGC PyTorch 25.12 (CUDA 13.1, Ubuntu 24.04)
+* Build the thin CuEVM image from the curated base:
+``` bash
+docker build -f Dockerfile.ngc -t cuevm-ngc .
+```
+* Run and mount the current code folder `docker run --gpus all -it -v $(pwd):/workspaces/CuEVM cuevm-ngc`
+* Inside the docker container, you can build the code using the same commands as above (Adjust `-DCUDA_COMPUTE_CAPABILITY="103-real;103-virtual"` according to your GPU compute capability number):
 ``` bash
 cmake -S . -B build -DTESTS=OFF -DGPU=ON -DCPU=OFF \
-    -DCUDA_COMPUTE_CAPABILITY=103 \
+    -DCUDA_COMPUTE_CAPABILITY="103-real;103-virtual" \
     -DENABLE_EIP_3155_OPTIONAL=OFF \
     -DENABLE_EIP_3155=ON \
     -DENABLE_PAIRING_CODE=ON

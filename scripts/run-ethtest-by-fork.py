@@ -169,8 +169,21 @@ def main():
         test_root = args.input
         print(f"Running tests for {test_root}")
         fork = args.fork.strip()
-        if fork.isupper() or fork.islower():
-            fork = fork.lower().capitalize()
+        fork_key = fork.upper()
+        fork_name_map = {
+            "SHANGHAI": "Shanghai",
+            "CANCUN": "Cancun",
+            "PARIS": "Paris",
+            "BERLIN": "Berlin",
+            "LONDON": "London",
+            "ISTANBUL": "Istanbul",
+            "CONSTANTINOPLE": "Constantinople",
+            "BYZANTIUM": "Byzantium",
+            "TANGARINE": "Tangarine",
+            "DRAGON": "Dragon",
+            "HOMESTEAD": "Homestead",
+        }
+        fork = fork_name_map.get(fork_key, fork)
         runtest_fork(test_root, args.temporary_path, fork=fork, runtest_bin=args.runtest_bin, geth_bin=args.geth,
                      cuevm_bin=args.cuevm, ignore_errors=args.ignore_errors, result=result, without_state_root=args.without_state_root,
                      microtests=args.microtests, skip_folder=args.skip_folder)

@@ -179,7 +179,7 @@ def main():
             "ISTANBUL": "Istanbul",
             "CONSTANTINOPLE": "Constantinople",
             "BYZANTIUM": "Byzantium",
-            "TANGARINE": "Tangarine",
+            "TANGERINE": "Tangerine",
             "DRAGON": "Dragon",
             "HOMESTEAD": "Homestead",
         }

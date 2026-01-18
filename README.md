@@ -92,15 +92,19 @@ The execution trace and output state will be printed to the stdout, you can use
 
 [Run Google Colab demo using free GPU](https://colab.research.google.com/drive/1W_3zKOJR2Jpv_6SoM0cmOFgVHP2b7rny?usp=sharing)
 
+## Fork correctness and differential validation
+
+CuEVM currently supports fork rules up to Cancun (set `-DEVM_VERSION=CANCUN` when needed). Osaka/Fusaka execution rules are not yet implemented, so for post-Fusaka or mainnet-like fuzzing treat GPU results as throughput candidates and re-run on a CPU reference EVM (geth/revm) with EIP-3155 traces enabled to confirm correctness.
+
 ## Testing using ethtest
 
 The script `scripts/run-ethtest-by-fork` can be used to run the tests from the
-[ethereum/tests](https://github.com/ethereum/tests/tree/shanghai/GeneralStateTests). It
+[ethereum/tests](https://github.com/ethereum/tests/tree/shanghai/GeneralStateTests) branch that matches the selected fork (examples below use Shanghai). It
 compares the traces from the outputs of CuEVM and `geth` without stateRoot.
 
 
 Requirements:
-- Shanghai branch of [ethereum/tests](https://github.com/ethereum/tests/tree/shanghai/GeneralStateTests)
+- A matching `ethereum/tests` fork branch (e.g. shanghai or cancun)
 -  [goevmlab with CuEVM driver](https://github.com/cassc/goevmlab/tree/add-cuevm)
 
 The following will run all the tests in `ethereum/tests/GeneralStateTests`, note that this may take a few hours:

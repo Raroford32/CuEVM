@@ -9,6 +9,7 @@ workdir = f'{workspace}/{run_id}'
 container_name = f"cuevm-test-runner-{run_id}"
 timeout_secs = 1800
 max_workers = 1 # limited by RAM size set for each docker process and CPU cores
+evm_fork = os.getenv("EVM_FORK", "SHANGHAI")
 
 # Run these most time-consuming folders first to have a better chance of completing them
 slow_folders_with_time = [
@@ -37,6 +38,7 @@ def run_test(folder, timeout_value, run_id, workspace):
             "--geth", "/goevmlab/gethvm",
             "--cuevm", "/workspaces/CuEVM/build/cuevm_GPU",
             "-i", f"/workspaces/CuEVM/ethereum/tests/GeneralStateTests/{folder}",
+            "--fork", evm_fork,
             "--ignore-errors", "--without-state-root"
         ]
         log_file = os.path.join(workspace, f"{run_id}/test-outputs/{folder}.log")

@@ -3,9 +3,10 @@ Cuda implementation of EVM bytecode executor
 
 
 ## Prerequisites
-- CUDA Toolkit (Version 12.0+, because we use `--std c++20`)
-- A CUDA-capable GPU (CUDA compute capabilily 7+ other older GPUs compability are not tested fully)
-- A C++ compiler compatible with the CUDA Toolkit (gcc/g++ version 10+)
+- CUDA Toolkit 13.1 Update 1+ (C++20 support, SM 103 for NVIDIA B300)
+- CMake 4.2.1+ (install from Kitware or `python3 -m pip install --user cmake==4.2.1`)
+- A CUDA-capable GPU (CUDA compute capability 10.3/SM 103 for B300; adjust for other GPUs)
+- A C++ compiler compatible with the CUDA Toolkit (GCC 11/12 or Clang 16)
 - For docker image, you don't need the above but the system with docker installed
 
 ## Compile and Build binary
@@ -17,11 +18,11 @@ There are two methods, one requires installing all prequisited in the system, th
 Building on Ubuntu (with sudo):
 * Setup required libraries: `sudo apt install libgmp-dev`
 * Setup cJSON: `sudo apt install libcjson-dev`
-* Use cmake to build the binary (Adjust `-DCUDA_COMPUTE_CAPABILITY=86` according to your GPU compute capability number):
+* Use cmake to build the binary (Adjust `-DCUDA_COMPUTE_CAPABILITY=103` according to your GPU compute capability number):
 
 ``` bash
 cmake -S . -B build -DTESTS=OFF -DGPU=ON -DCPU=OFF \
-    -DCUDA_COMPUTE_CAPABILITY=86
+    -DCUDA_COMPUTE_CAPABILITY=103
     -DENABLE_EIP_3155_OPTIONAL=OFF \
     -DENABLE_EIP_3155=ON \
     -DENABLE_PAIRING_CODE=ON
@@ -33,12 +34,12 @@ Building without sudo is also possible with extra configuration and modification
 
 #### Building using docker image
 
-* Pull the docker image first: `docker pull augustus/goevmlab-cuevm:20241008`
-* Run and mount the current code folder `docker run -it -v $(pwd):/workspaces/CuEVM augustus/goevmlab-cuevm:20241008`
-* Inside the docker container, you can build the code using the same commands as above (Adjust `-DCUDA_COMPUTE_CAPABILITY=86` according to your GPU compute capability number):
+* Pull the docker image first: `docker pull augustus/goevmlab-cuevm:20241216` (ensure it contains CUDA 13.1 Update 1+)
+* Run and mount the current code folder `docker run -it -v $(pwd):/workspaces/CuEVM augustus/goevmlab-cuevm:20241216`
+* Inside the docker container, you can build the code using the same commands as above (Adjust `-DCUDA_COMPUTE_CAPABILITY=103` according to your GPU compute capability number):
 ``` bash
 cmake -S . -B build -DTESTS=OFF -DGPU=ON -DCPU=OFF \
-    -DCUDA_COMPUTE_CAPABILITY=86 \
+    -DCUDA_COMPUTE_CAPABILITY=103 \
     -DENABLE_EIP_3155_OPTIONAL=OFF \
     -DENABLE_EIP_3155=ON \
     -DENABLE_PAIRING_CODE=ON

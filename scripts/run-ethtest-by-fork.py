@@ -145,7 +145,7 @@ def runtest_fork(input_directory, output_directory, fork='Shanghai', runtest_bin
 
 def main():
     import argparse
-    parser = argparse.ArgumentParser(description='Filter JSON files for entries related to "Shanghai"')
+    parser = argparse.ArgumentParser(description='Filter JSON files for entries related to the selected fork')
     parser.add_argument('--input', '-i',  type=str, required=True, help='Input directory containing JSON files')
     parser.add_argument('--temporary-path', '-t', type=str, required=True, help='Temporary directory to save the test files')
     parser.add_argument('--runtest-bin', type=str, required=True, help='goevmlab runtest binary path')
@@ -156,6 +156,7 @@ def main():
     parser.add_argument('--microtests', action='store_true', help='verify without the state root', default=False)
     parser.add_argument('--skip-folder', type=str, help='Skip folder', default="")
     parser.add_argument('--timeout', type=int, help='Timeout in seconds for each test', default=90)
+    parser.add_argument('--fork', type=str, help='EVM fork name (e.g. Shanghai, Cancun)', default="Shanghai")
     args = parser.parse_args()
 
     global TIME_OUT
@@ -167,7 +168,23 @@ def main():
     try:
         test_root = args.input
         print(f"Running tests for {test_root}")
-        runtest_fork(test_root, args.temporary_path, fork='Shanghai', runtest_bin=args.runtest_bin, geth_bin=args.geth,
+        fork = args.fork.strip()
+        fork_key = fork.upper()
+        fork_name_map = {
+            "SHANGHAI": "Shanghai",
+            "CANCUN": "Cancun",
+            "PARIS": "Paris",
+            "BERLIN": "Berlin",
+            "LONDON": "London",
+            "ISTANBUL": "Istanbul",
+            "CONSTANTINOPLE": "Constantinople",
+            "BYZANTIUM": "Byzantium",
+            "TANGERINE": "Tangerine",
+            "DRAGON": "Dragon",
+            "HOMESTEAD": "Homestead",
+        }
+        fork = fork_name_map.get(fork_key, fork)
+        runtest_fork(test_root, args.temporary_path, fork=fork, runtest_bin=args.runtest_bin, geth_bin=args.geth,
                      cuevm_bin=args.cuevm, ignore_errors=args.ignore_errors, result=result, without_state_root=args.without_state_root,
                      microtests=args.microtests, skip_folder=args.skip_folder)
     except Exception:

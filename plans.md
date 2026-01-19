@@ -3,7 +3,7 @@
 This plan lists **remaining work** needed to make CuEVM a production‑grade, GPU‑only fuzzer with maximum coverage, correctness, and throughput on B300‑class GPUs.
 
 ## 1) Engine + fork coverage (correctness foundation)
-- [ ] Implement Osaka/Fusaka fork support in CuEVM (opcodes, precompiles, fork rules, and block context fields).
+- [ ] Implement Osaka / Fulu‑Osaka (Fusaka) fork support in CuEVM (opcodes, precompiles, fork rules, and block context fields).
 - [ ] Add fork selection in GPU runner config so fuzzing uses the intended fork rules without CPU gating.
 - [ ] Expand EIP‑3155 trace coverage to include all fork‑specific opcodes.
 - [ ] Add regression GPU tests for new fork behavior using focused JSON fixtures.
@@ -55,4 +55,3 @@ This plan lists **remaining work** needed to make CuEVM a production‑grade, GP
 - [ ] Threat‑model fuzz runner inputs and harden file handling.
 - [ ] Add fuzzing sandbox / resource limits for untrusted targets.
 - [ ] Add upgrade checklist for dependencies and GPU drivers.
-

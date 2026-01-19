@@ -19,7 +19,7 @@ Deliver maximum‑coverage, GPU‑only fuzzing with multi‑sequence, cross‑co
 
 ## Implementation checklist (apply in order)
 1. **Fork coverage**
-   - Implement Osaka/Fusaka rules in CuEVM.
+   - Implement Osaka / Fulu‑Osaka (Fusaka) rules in CuEVM.
    - Add fork‑specific test fixtures to validate opcode and precompile behavior.
 
 2. **Coverage instrumentation**
@@ -58,4 +58,3 @@ Deliver maximum‑coverage, GPU‑only fuzzing with multi‑sequence, cross‑co
   - `cmake -S . -B build -DTESTS=ON -DTESTS_GPU=OFF -DENABLE_EIP_3155=ON`
 - Example GPU fuzz run:
   - `python fuzzing/fuzzer.py --input fuzzing/contracts/erc20.sol --config fuzzing/configurations/default.json --num_instances 256 --num_iterations 100`
-

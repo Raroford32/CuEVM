@@ -85,7 +85,7 @@ class Fuzzer:
         self.ast_parser = self.library.ast_parser
         self.contract_name = self.library.contract_name
         self.timeout = timeout # in seconds
-        self.parse_fuzzing_confg(config)
+        self.parse_fuzzing_config(config)
         self.abi_list = {} # mapping from function to input types for abi encoding
         if test_case_file:
             self.run_test_case(test_case_file)
@@ -294,7 +294,7 @@ class Fuzzer:
         # print ("testcase" , test_case)
         return tx
 
-    def parse_fuzzing_confg(self, config):
+    def parse_fuzzing_config(self, config):
         with open(config) as f:
             config_data = json.load(f)
         self.sequence_length = int(config_data.get("sequence_length", 1))
@@ -306,6 +306,7 @@ class Fuzzer:
         )
         self.storage_invariants = self.invariants.get("storage", {})
         self.balance_invariants = self.invariants.get("balance", {})
+        self.invariant_log_shown = False
 
     def select_receiver(self):
         if not self.receivers:
@@ -330,10 +331,16 @@ class Fuzzer:
             return value
         if isinstance(value, str) and value.startswith("0x"):
             return int(value, 16)
-        return int(value)
+        try:
+            return int(value)
+        except (ValueError, TypeError):
+            return None
 
     def check_invariants(self, step):
         if not self.invariants or not self.library.last_result_state:
+            if not self.invariant_log_shown and DEBUG[0] == "v":
+                print("Invariant checks skipped (no invariants or result state).")
+                self.invariant_log_shown = True
             return
         post_states = self.library.last_result_state.get("post", [])
         for idx, item in enumerate(post_states):
@@ -360,18 +367,20 @@ class Fuzzer:
             balance_min = self.balance_invariants.get("min", {})
             for addr, min_val in balance_min.items():
                 current = self.to_int(state.get(addr, {}).get("balance", "0x0"))
-                if current is not None and current < self.to_int(min_val):
+                min_val_int = self.to_int(min_val)
+                if current is not None and min_val_int is not None and current < min_val_int:
                     self.record_invariant_bug(
                         "balance_min",
-                        f"{addr}:{min_val}:{current}:{step}:{idx}",
+                        f"{addr}:{min_val_int}:{current}:{step}:{idx}",
                     )
             balance_max = self.balance_invariants.get("max", {})
             for addr, max_val in balance_max.items():
                 current = self.to_int(state.get(addr, {}).get("balance", "0x0"))
-                if current is not None and current > self.to_int(max_val):
+                max_val_int = self.to_int(max_val)
+                if current is not None and max_val_int is not None and current > max_val_int:
                     self.record_invariant_bug(
                         "balance_max",
-                        f"{addr}:{max_val}:{current}:{step}:{idx}",
+                        f"{addr}:{max_val_int}:{current}:{step}:{idx}",
                     )
 
     def run(self, num_iterations=10):

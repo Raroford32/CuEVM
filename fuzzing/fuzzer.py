@@ -218,10 +218,15 @@ class Fuzzer:
             "inputs": copy.deepcopy(inputs)
         })
 
-        tx_data.append({
+        tx_entry = {
             "data":  get_transaction_data_from_processed_abi(self.abi_list, function, inputs),
             "value": [hex(0)]
-        })
+        }
+        receiver = self.select_receiver()
+        if receiver:
+            tx_entry["to"] = receiver
+            self.raw_inputs[-1]["to"] = receiver
+        tx_data.append(tx_entry)
 
     def run_seed_round(self):
 
@@ -290,27 +295,106 @@ class Fuzzer:
         return tx
 
     def parse_fuzzing_confg(self, config):
-        ...
+        with open(config) as f:
+            config_data = json.load(f)
+        self.sequence_length = int(config_data.get("sequence_length", 1))
+        self.receivers = config_data.get("receivers", [])
+        self.invariants = config_data.get("invariants", {})
+        self.target_address = config_data.get(
+            "target_address",
+            self.library.instances[0]["transaction"]["to"],
+        )
+        self.storage_invariants = self.invariants.get("storage", {})
+        self.balance_invariants = self.invariants.get("balance", {})
+
+    def select_receiver(self):
+        if not self.receivers:
+            return None
+        return random.choice(self.receivers)
+
+    def record_invariant_bug(self, bug_type, detail):
+        bug_id = f"{bug_type}:{detail}"
+        if bug_id in self.detected_bugs:
+            return
+        self.detected_bugs[bug_id] = DetectedBug(
+            pc=-1,
+            bug_type=bug_type,
+            input={"detail": detail},
+            line_info=[],
+        )
+
+    def to_int(self, value):
+        if value is None:
+            return None
+        if isinstance(value, int):
+            return value
+        if isinstance(value, str) and value.startswith("0x"):
+            return int(value, 16)
+        return int(value)
+
+    def check_invariants(self, step):
+        if not self.invariants or not self.library.last_result_state:
+            return
+        post_states = self.library.last_result_state.get("post", [])
+        for idx, item in enumerate(post_states):
+            state = item.get("state", {})
+            target_state = state.get(self.target_address, {})
+            storage = target_state.get("storage", {})
+            storage_equals = self.storage_invariants.get("equals", {})
+            for key, expected in storage_equals.items():
+                current = self.to_int(storage.get(key, "0x0"))
+                expected_val = self.to_int(expected)
+                if current != expected_val:
+                    self.record_invariant_bug(
+                        "storage_equals",
+                        f"{key}:{expected_val}:{current}:{step}:{idx}",
+                    )
+            for key in self.storage_invariants.get("nonzero", []):
+                current = self.to_int(storage.get(key, "0x0"))
+                if current == 0:
+                    self.record_invariant_bug(
+                        "storage_nonzero",
+                        f"{key}:{current}:{step}:{idx}",
+                    )
+
+            balance_min = self.balance_invariants.get("min", {})
+            for addr, min_val in balance_min.items():
+                current = self.to_int(state.get(addr, {}).get("balance", "0x0"))
+                if current is not None and current < self.to_int(min_val):
+                    self.record_invariant_bug(
+                        "balance_min",
+                        f"{addr}:{min_val}:{current}:{step}:{idx}",
+                    )
+            balance_max = self.balance_invariants.get("max", {})
+            for addr, max_val in balance_max.items():
+                current = self.to_int(state.get(addr, {}).get("balance", "0x0"))
+                if current is not None and current > self.to_int(max_val):
+                    self.record_invariant_bug(
+                        "balance_max",
+                        f"{addr}:{max_val}:{current}:{step}:{idx}",
+                    )
 
     def run(self, num_iterations=10):
         for i in range(num_iterations):
             if DEBUG[0] == "v":
                 print ("\n" + "-"*80)
                 print(f"Iteration {i}\n")
-            tx_data = []
-            self.raw_inputs = []
-            for idx in range(self.num_instances):
-                input, function = self.select_next_input()
-                new_input = self.mutate(input, function)
-                if DEBUG[0] == "v":
-                    print(f"Function {function} : {new_input}")
-                self.post_process_input(tx_data, new_input, function)
+            for step in range(self.sequence_length):
+                tx_data = []
+                self.raw_inputs = []
+                for idx in range(self.num_instances):
+                    input, function = self.select_next_input()
+                    new_input = self.mutate(input, function)
+                    if DEBUG[0] == "v":
+                        print(f"Function {function} : {new_input}")
+                    self.post_process_input(tx_data, new_input, function)
 
-            tx_trace = self.library.run_transactions(tx_data)
-            self.process_tx_trace(tx_trace)
-            if len(DEBUG) > 1 and DEBUG[1] == "v":
-                print(f"Iteration {i} : {tx_data}")
-                pprint(tx_trace)
+                tx_trace = self.library.run_transactions(tx_data)
+                self.process_tx_trace(tx_trace)
+                self.check_invariants(step)
+                if len(DEBUG) > 1 and DEBUG[1] == "v":
+                    print(f"Iteration {i} Step {step} : {tx_data}")
+                    pprint(tx_trace)
 
         print ("\n\n Final Population \n\n")
         self.print_population()

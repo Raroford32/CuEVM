@@ -39,6 +39,7 @@ class CuEVMLib:
             run_eth_tests,
         )
         self.sender = sender
+        self.last_result_state = None
 
     def update_persistent_state(self, json_result):
         trace_values = json_result
@@ -87,6 +88,7 @@ class CuEVMLib:
         if measure_performance:
             time_start = time.time()
         result_state = libcuevm.run_dict(self.instances, skip_trace_parsing)
+        self.last_result_state = result_state
         if measure_performance:
             time_end = time.time()
             print(f"Time taken: {time_end - time_start} seconds")
@@ -264,6 +266,8 @@ class CuEVMLib:
             self.instances[i]["transaction"]["value"] = tx_data[i]["value"]
             if tx_data[i].get("sender"):
                 self.instances[i]["transaction"]["sender"] = tx_data[i]["sender"]
+            if tx_data[i].get("to"):
+                self.instances[i]["transaction"]["to"] = tx_data[i]["to"]
 
             # TODO: add other fuzz-able fields
 

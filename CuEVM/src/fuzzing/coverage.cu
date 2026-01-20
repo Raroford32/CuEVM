@@ -247,7 +247,7 @@ __host__ __device__ void CoverageInstrumentation::on_sstore(uint32_t pc, const e
         // Check if value changed
         bool changed = false;
         for (int i = 0; i < 8; i++) {
-            if (old_value.limbs[i] != new_value.limbs[i]) {
+            if (old_value._limbs[i] != new_value._limbs[i]) {
                 changed = true;
                 break;
             }
@@ -284,12 +284,12 @@ __host__ __device__ void CoverageInstrumentation::on_call(uint32_t pc, uint8_t o
         // Check if precompile (addresses 0x01-0x09)
         bool is_precompile = true;
         for (int i = 1; i < 8; i++) {
-            if (target.limbs[i] != 0) {
+            if (target._limbs[i] != 0) {
                 is_precompile = false;
                 break;
             }
         }
-        if (is_precompile && target.limbs[0] >= 1 && target.limbs[0] <= 9) {
+        if (is_precompile && target._limbs[0] >= 1 && target._limbs[0] <= 9) {
             entry->is_precompile = 1;
         } else {
             entry->is_precompile = 0;
@@ -297,7 +297,7 @@ __host__ __device__ void CoverageInstrumentation::on_call(uint32_t pc, uint8_t o
         // Check if value transferred
         bool has_value = false;
         for (int i = 0; i < 8; i++) {
-            if (value.limbs[i] != 0) {
+            if (value._limbs[i] != 0) {
                 has_value = true;
                 break;
             }
@@ -330,8 +330,8 @@ __host__ __device__ void CoverageInstrumentation::on_comparison(uint32_t pc, uin
     // Simple distance: XOR of first 8 bytes
     uint64_t a_val = 0, b_val = 0;
     for (int i = 0; i < 2; i++) {
-        a_val |= ((uint64_t)a.limbs[i] << (i * 32));
-        b_val |= ((uint64_t)b.limbs[i] << (i * 32));
+        a_val |= ((uint64_t)a._limbs[i] << (i * 32));
+        b_val |= ((uint64_t)b._limbs[i] << (i * 32));
     }
 
     if (a_val > b_val) {
@@ -397,7 +397,7 @@ __host__ __device__ uint32_t CoverageInstrumentation::hash_slot(const evm_word_t
     // Simple hash of 256-bit storage slot
     uint32_t hash = 0;
     for (int i = 0; i < 8; i++) {
-        hash ^= slot.limbs[i];
+        hash ^= slot._limbs[i];
         hash = (hash << 5) | (hash >> 27);  // Rotate
     }
     return hash;
@@ -415,8 +415,8 @@ __host__ __device__ uint8_t CoverageInstrumentation::quantize_distance(uint64_t 
 __host__ __device__ uint64_t CoverageInstrumentation::compute_branch_distance(const evm_word_t& condition) {
     // Distance to zero (for ISZERO-based branches)
     uint64_t distance = 0;
-    for (int i = 0; i < 8; i++) {
-        distance |= ((uint64_t)condition.limbs[i] << (i % 2 * 32));
+    for (int i = 0; i < 2; i++) {
+        distance |= ((uint64_t)condition._limbs[i] << (i * 32));
     }
     return distance;
 }

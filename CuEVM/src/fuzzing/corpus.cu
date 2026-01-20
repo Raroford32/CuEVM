@@ -376,7 +376,7 @@ __host__ __device__ bool GPUCorpusManager::add_seed_if_interesting(const seed_en
     if (coverage_baseline_) {
         // Count new coverage
         for (uint32_t i = 0; i < COVERAGE_MAP_SIZE / 32; i++) {
-            uint32_t new_bits = coverage.edge_bitmap[i] & ~coverage_baseline_->edges.hit_bitmap[i];
+            uint32_t new_bits = coverage.edge_bitmap[i] & ~coverage_baseline_->edge_bitmap[i];
             new_edges += __builtin_popcount(new_bits);
         }
     } else {
@@ -1078,7 +1078,7 @@ __host__ void CorpusDistiller::greedy_cover(GPUCorpusManager* output_corpus,
     // Track which coverage bits we still need
     std::vector<uint32_t> uncovered(COVERAGE_MAP_SIZE / 32);
     for (uint32_t i = 0; i < COVERAGE_MAP_SIZE / 32; i++) {
-        uncovered[i] = target_coverage->edges.hit_bitmap[i];
+        uncovered[i] = target_coverage->edge_bitmap[i];
     }
 
     uint32_t total_uncovered = 0;
@@ -1236,11 +1236,11 @@ __host__ __device__ bool InvariantChecker::check_storage_equals(const invariant_
     if (!storage) return true;
 
     // Get slot index (simplified - in reality would need to compute storage location)
-    uint32_t slot_idx = inv.slot1.limbs[0] % 1024;  // Assume max 1024 storage slots
+    uint32_t slot_idx = inv.slot1._limbs[0] % 1024;  // Assume max 1024 storage slots
 
     // Compare with expected value
     for (int i = 0; i < 8; i++) {
-        if (storage[slot_idx].limbs[i] != inv.expected_value.limbs[i]) {
+        if (storage[slot_idx]._limbs[i] != inv.expected_value._limbs[i]) {
             return false;
         }
     }
@@ -1251,27 +1251,27 @@ __host__ __device__ bool InvariantChecker::check_storage_range(const invariant_t
                                                                 const evm_word_t* storage) {
     if (!storage) return true;
 
-    uint32_t slot_idx = inv.slot1.limbs[0] % 1024;
+    uint32_t slot_idx = inv.slot1._limbs[0] % 1024;
 
     // Simplified comparison using first limb only
-    uint32_t value = storage[slot_idx].limbs[0];
+    uint32_t value = storage[slot_idx]._limbs[0];
 
     switch (inv.type) {
         case InvariantType::STORAGE_NOT_ZERO:
             // Check if any limb is non-zero
             for (int i = 0; i < 8; i++) {
-                if (storage[slot_idx].limbs[i] != 0) return true;
+                if (storage[slot_idx]._limbs[i] != 0) return true;
             }
             return false;
 
         case InvariantType::STORAGE_LESS_THAN:
-            return value < inv.max_value.limbs[0];
+            return value < inv.max_value._limbs[0];
 
         case InvariantType::STORAGE_GREATER_THAN:
-            return value > inv.min_value.limbs[0];
+            return value > inv.min_value._limbs[0];
 
         case InvariantType::STORAGE_IN_RANGE:
-            return value >= inv.min_value.limbs[0] && value <= inv.max_value.limbs[0];
+            return value >= inv.min_value._limbs[0] && value <= inv.max_value._limbs[0];
 
         default:
             return true;
@@ -1285,12 +1285,12 @@ __host__ __device__ bool InvariantChecker::check_balance_conserved(const invaria
     // Sum up balances for tracked addresses
     uint64_t total = 0;
     for (uint32_t i = 0; i < inv.num_slots && i < 4; i++) {
-        uint32_t addr_idx = inv.addresses[i].limbs[0] % 256;
-        total += balances[addr_idx].limbs[0];
+        uint32_t addr_idx = inv.addresses[i]._limbs[0] % 256;
+        total += balances[addr_idx]._limbs[0];
     }
 
     // Check against expected total
-    return total == inv.expected_value.limbs[0];
+    return total == inv.expected_value._limbs[0];
 }
 
 __host__ __device__ bool InvariantChecker::check_sum_equals(const invariant_t& inv,
@@ -1300,12 +1300,12 @@ __host__ __device__ bool InvariantChecker::check_sum_equals(const invariant_t& i
     // Sum storage slots
     uint64_t sum = 0;
     for (uint32_t i = 0; i < inv.num_slots && i < 4; i++) {
-        uint32_t slot_idx = inv.slots[i].limbs[0] % 1024;
-        sum += storage[slot_idx].limbs[0];
+        uint32_t slot_idx = inv.slots[i]._limbs[0] % 1024;
+        sum += storage[slot_idx]._limbs[0];
     }
 
     // Check against expected sum
-    return sum == inv.expected_value.limbs[0];
+    return sum == inv.expected_value._limbs[0];
 }
 
 __host__ void InvariantChecker::add_erc20_invariants(const evm_word_t& token_address) {

@@ -252,10 +252,16 @@ public:
  * Coverage serialization for corpus management
  */
 struct coverage_snapshot_t {
+    // Bitmap data pointers for serialization
     uint8_t* pc_bitmap_data;
     uint32_t pc_bitmap_size;
     uint8_t* edge_bitmap_data;
     uint32_t edge_bitmap_size;
+
+    // Compact bitmap for quick coverage comparison (as uint32_t words)
+    uint32_t edge_bitmap[COVERAGE_MAP_SIZE / 32];
+
+    // Statistics
     uint32_t unique_pcs;
     uint32_t unique_edges;
     uint32_t unique_branches;

@@ -37,50 +37,50 @@ constexpr uint8_t OP_CALLER = 0x33;
 
 __host__ __device__ bool is_zero(const evm_word_t& val) {
     for (int i = 0; i < 8; i++) {
-        if (val.limbs[i] != 0) return false;
+        if (val._limbs[i] != 0) return false;
     }
     return true;
 }
 
 __host__ __device__ bool equals(const evm_word_t& a, const evm_word_t& b) {
     for (int i = 0; i < 8; i++) {
-        if (a.limbs[i] != b.limbs[i]) return false;
+        if (a._limbs[i] != b._limbs[i]) return false;
     }
     return true;
 }
 
 __host__ __device__ bool less_than(const evm_word_t& a, const evm_word_t& b) {
     for (int i = 7; i >= 0; i--) {
-        if (a.limbs[i] < b.limbs[i]) return true;
-        if (a.limbs[i] > b.limbs[i]) return false;
+        if (a._limbs[i] < b._limbs[i]) return true;
+        if (a._limbs[i] > b._limbs[i]) return false;
     }
     return false;
 }
 
 __host__ __device__ bool greater_than(const evm_word_t& a, const evm_word_t& b) {
     for (int i = 7; i >= 0; i--) {
-        if (a.limbs[i] > b.limbs[i]) return true;
-        if (a.limbs[i] < b.limbs[i]) return false;
+        if (a._limbs[i] > b._limbs[i]) return true;
+        if (a._limbs[i] < b._limbs[i]) return false;
     }
     return false;
 }
 
 __host__ __device__ void copy_word(evm_word_t& dst, const evm_word_t& src) {
     for (int i = 0; i < 8; i++) {
-        dst.limbs[i] = src.limbs[i];
+        dst._limbs[i] = src._limbs[i];
     }
 }
 
 __host__ __device__ void zero_word(evm_word_t& val) {
     for (int i = 0; i < 8; i++) {
-        val.limbs[i] = 0;
+        val._limbs[i] = 0;
     }
 }
 
 __host__ __device__ uint64_t hash_word(const evm_word_t& val) {
     uint64_t hash = 0;
     for (int i = 0; i < 8; i++) {
-        hash ^= ((uint64_t)val.limbs[i]) << ((i & 1) * 32);
+        hash ^= ((uint64_t)val._limbs[i]) << ((i & 1) * 32);
         hash = (hash << 7) | (hash >> 57);
     }
     return hash;
@@ -478,14 +478,14 @@ __host__ __device__ void OracleDetector::check_exp(uint32_t pc, const evm_word_t
     if (!is_zero(base) && !is_zero(exp)) {
         bool base_gt_1 = false;
         for (int i = 7; i >= 0; i--) {
-            if (base.limbs[i] > 0) {
-                if (base.limbs[i] > 1 || i > 0) {
+            if (base._limbs[i] > 0) {
+                if (base._limbs[i] > 1 || i > 0) {
                     base_gt_1 = true;
                 }
                 break;
             }
         }
-        if (base_gt_1 && exp.limbs[0] > 255) {
+        if (base_gt_1 && exp._limbs[0] > 255) {
             bug_location_t location;
             location.pc = pc;
             location.tx_index = current_tx_index_;
@@ -695,12 +695,12 @@ __host__ __device__ bool OracleDetector::is_reentrancy_safe_call(uint8_t opcode,
     // Check if target is a known safe address (precompiles)
     bool is_precompile = true;
     for (int i = 1; i < 8; i++) {
-        if (target.limbs[i] != 0) {
+        if (target._limbs[i] != 0) {
             is_precompile = false;
             break;
         }
     }
-    if (is_precompile && target.limbs[0] >= 1 && target.limbs[0] <= 9) {
+    if (is_precompile && target._limbs[0] >= 1 && target._limbs[0] <= 9) {
         return true;
     }
 
@@ -723,7 +723,7 @@ __host__ __device__ bool OracleDetector::check_add_overflow(const evm_word_t& a,
     // Overflow if a + b < a (when both are non-negative)
     uint64_t carry = 0;
     for (int i = 0; i < 8; i++) {
-        uint64_t sum = (uint64_t)a.limbs[i] + (uint64_t)b.limbs[i] + carry;
+        uint64_t sum = (uint64_t)a._limbs[i] + (uint64_t)b._limbs[i] + carry;
         carry = sum >> 32;
     }
     return carry > 0;
@@ -734,8 +734,8 @@ __host__ __device__ bool OracleDetector::check_mul_overflow(const evm_word_t& a,
     // More accurate would require full 512-bit multiplication
     int a_high = -1, b_high = -1;
     for (int i = 7; i >= 0; i--) {
-        if (a.limbs[i] != 0 && a_high < 0) a_high = i;
-        if (b.limbs[i] != 0 && b_high < 0) b_high = i;
+        if (a._limbs[i] != 0 && a_high < 0) a_high = i;
+        if (b._limbs[i] != 0 && b_high < 0) b_high = i;
     }
     // If a_high + b_high >= 8, result needs more than 256 bits
     if (a_high >= 0 && b_high >= 0 && a_high + b_high >= 7) {
@@ -912,8 +912,8 @@ __host__ __device__ void FundSafetyOracle::on_eth_received(const evm_word_t& fro
     // Add to total received
     uint64_t carry = 0;
     for (int i = 0; i < 8; i++) {
-        uint64_t sum = (uint64_t)total_eth_received_.limbs[i] + (uint64_t)amount.limbs[i] + carry;
-        total_eth_received_.limbs[i] = (uint32_t)sum;
+        uint64_t sum = (uint64_t)total_eth_received_._limbs[i] + (uint64_t)amount._limbs[i] + carry;
+        total_eth_received_._limbs[i] = (uint32_t)sum;
         carry = sum >> 32;
     }
 }
@@ -925,8 +925,8 @@ __host__ __device__ void FundSafetyOracle::on_eth_sent(uint32_t pc, const evm_wo
     // Add to total sent
     uint64_t carry = 0;
     for (int i = 0; i < 8; i++) {
-        uint64_t sum = (uint64_t)total_eth_sent_.limbs[i] + (uint64_t)amount.limbs[i] + carry;
-        total_eth_sent_.limbs[i] = (uint32_t)sum;
+        uint64_t sum = (uint64_t)total_eth_sent_._limbs[i] + (uint64_t)amount._limbs[i] + carry;
+        total_eth_sent_._limbs[i] = (uint32_t)sum;
         carry = sum >> 32;
     }
 
@@ -1026,8 +1026,8 @@ __host__ __device__ void GasOracle::check_unbounded_loop(uint32_t pc, uint32_t i
             location.tx_index = current_tx_index_;
 
             bug_context_t context;
-            context.operand1.limbs[0] = iteration_count;
-            for (int i = 1; i < 8; i++) context.operand1.limbs[i] = 0;
+            context.operand1._limbs[0] = iteration_count;
+            for (int i = 1; i < 8; i++) context.operand1._limbs[i] = 0;
             context.context_length = 0;
 
             report_bug(BugType::UNBOUNDED_LOOP, BugSeverity::MEDIUM, location, context,
@@ -1046,9 +1046,9 @@ __host__ __device__ void GasOracle::check_block_gas_limit(uint64_t total_gas) {
         location.tx_index = current_tx_index_;
 
         bug_context_t context;
-        context.operand1.limbs[0] = (uint32_t)(total_gas & 0xFFFFFFFF);
-        context.operand1.limbs[1] = (uint32_t)(total_gas >> 32);
-        for (int i = 2; i < 8; i++) context.operand1.limbs[i] = 0;
+        context.operand1._limbs[0] = (uint32_t)(total_gas & 0xFFFFFFFF);
+        context.operand1._limbs[1] = (uint32_t)(total_gas >> 32);
+        for (int i = 2; i < 8; i++) context.operand1._limbs[i] = 0;
         context.context_length = 0;
 
         report_bug(BugType::BLOCK_GAS_LIMIT, BugSeverity::HIGH, location, context,

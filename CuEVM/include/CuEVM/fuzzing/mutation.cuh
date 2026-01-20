@@ -114,45 +114,17 @@ enum class MutationType : uint8_t {
 // Interesting Values for Smart Contracts
 // ============================================================================
 
-// 8-bit interesting values
-__constant__ int8_t INTERESTING_8_VALUES[] = {
-    -128, -1, 0, 1, 16, 32, 64, 100, 127
-};
+// Interesting values counts (values defined in mutation.cu)
 constexpr uint32_t NUM_INTERESTING_8 = 9;
-
-// 16-bit interesting values
-__constant__ int16_t INTERESTING_16_VALUES[] = {
-    -32768, -129, -128, -1, 0, 1, 127, 128, 255, 256,
-    512, 1000, 1024, 4096, 32767
-};
 constexpr uint32_t NUM_INTERESTING_16 = 15;
-
-// 32-bit interesting values
-__constant__ int32_t INTERESTING_32_VALUES[] = {
-    -2147483648, -100663046, -32769, -32768, -129, -128, -1,
-    0, 1, 127, 128, 255, 256, 512, 1000, 1024, 4096, 32767,
-    32768, 65535, 65536, 100663045, 2147483647
-};
 constexpr uint32_t NUM_INTERESTING_32 = 23;
-
-// 64-bit interesting values (for Solidity uint256 boundaries)
-__constant__ int64_t INTERESTING_64_VALUES[] = {
-    0LL,
-    1LL,
-    -1LL,
-    255LL,
-    256LL,
-    65535LL,
-    65536LL,
-    0x7FFFFFFFLL,
-    0x80000000LL,
-    0xFFFFFFFFLL,
-    0x100000000LL,
-    0x7FFFFFFFFFFFFFFFLL,
-    (int64_t)0x8000000000000000ULL,
-    -1LL  // 0xFFFFFFFFFFFFFFFF
-};
 constexpr uint32_t NUM_INTERESTING_64 = 14;
+
+// External declarations for device constant memory arrays (defined in mutation.cu)
+extern __constant__ int8_t INTERESTING_8_VALUES[NUM_INTERESTING_8];
+extern __constant__ int16_t INTERESTING_16_VALUES[NUM_INTERESTING_16];
+extern __constant__ int32_t INTERESTING_32_VALUES[NUM_INTERESTING_32];
+extern __constant__ int64_t INTERESTING_64_VALUES[NUM_INTERESTING_64];
 
 // EVM-specific interesting values
 struct evm_interesting_t {

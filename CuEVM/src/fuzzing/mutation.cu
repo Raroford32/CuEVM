@@ -10,6 +10,46 @@ namespace CuEVM {
 namespace fuzzing {
 
 // ============================================================================
+// Interesting Values Definitions (declared in mutation.cuh)
+// ============================================================================
+
+// 8-bit interesting values
+__constant__ int8_t INTERESTING_8_VALUES[NUM_INTERESTING_8] = {
+    -128, -1, 0, 1, 16, 32, 64, 100, 127
+};
+
+// 16-bit interesting values
+__constant__ int16_t INTERESTING_16_VALUES[NUM_INTERESTING_16] = {
+    -32768, -129, -128, -1, 0, 1, 127, 128, 255, 256,
+    512, 1000, 1024, 4096, 32767
+};
+
+// 32-bit interesting values
+__constant__ int32_t INTERESTING_32_VALUES[NUM_INTERESTING_32] = {
+    -2147483648, -100663046, -32769, -32768, -129, -128, -1,
+    0, 1, 127, 128, 255, 256, 512, 1000, 1024, 4096, 32767,
+    32768, 65535, 65536, 100663045, 2147483647
+};
+
+// 64-bit interesting values (for Solidity uint256 boundaries)
+__constant__ int64_t INTERESTING_64_VALUES[NUM_INTERESTING_64] = {
+    0LL,
+    1LL,
+    -1LL,
+    255LL,
+    256LL,
+    65535LL,
+    65536LL,
+    0x7FFFFFFFLL,
+    0x80000000LL,
+    0xFFFFFFFFLL,
+    0x100000000LL,
+    0x7FFFFFFFFFFFFFFFLL,
+    (int64_t)0x8000000000000000ULL,
+    -1LL  // 0xFFFFFFFFFFFFFFFF
+};
+
+// ============================================================================
 // EVM Interesting Values (256-bit)
 // ============================================================================
 
@@ -209,14 +249,14 @@ __host__ __device__ void mutation_input_t::copy_from(const mutation_input_t& oth
     }
     // Copy 256-bit values
     for (int i = 0; i < 8; i++) {
-        value.limbs[i] = other.value.limbs[i];
-        gas_limit.limbs[i] = other.gas_limit.limbs[i];
-        sender.limbs[i] = other.sender.limbs[i];
-        receiver.limbs[i] = other.receiver.limbs[i];
-        block_number.limbs[i] = other.block_number.limbs[i];
-        timestamp.limbs[i] = other.timestamp.limbs[i];
-        basefee.limbs[i] = other.basefee.limbs[i];
-        prevrandao.limbs[i] = other.prevrandao.limbs[i];
+        value._limbs[i] = other.value._limbs[i];
+        gas_limit._limbs[i] = other.gas_limit._limbs[i];
+        sender._limbs[i] = other.sender._limbs[i];
+        receiver._limbs[i] = other.receiver._limbs[i];
+        block_number._limbs[i] = other.block_number._limbs[i];
+        timestamp._limbs[i] = other.timestamp._limbs[i];
+        basefee._limbs[i] = other.basefee._limbs[i];
+        prevrandao._limbs[i] = other.prevrandao._limbs[i];
     }
 }
 
@@ -899,28 +939,28 @@ __device__ void GPUMutationEngine::mutate_value(mutation_input_t* input, curandS
 
     switch (strategy) {
         case 0:  // Zero
-            for (int i = 0; i < 8; i++) input->value.limbs[i] = 0;
+            for (int i = 0; i < 8; i++) input->value._limbs[i] = 0;
             break;
         case 1:  // Small value
         {
-            for (int i = 1; i < 8; i++) input->value.limbs[i] = 0;
-            input->value.limbs[0] = curand(rng) % 1000;
+            for (int i = 1; i < 8; i++) input->value._limbs[i] = 0;
+            input->value._limbs[0] = curand(rng) % 1000;
             break;
         }
         case 2:  // 1 ETH equivalent
         {
-            for (int i = 2; i < 8; i++) input->value.limbs[i] = 0;
-            input->value.limbs[0] = 0x4A817C80;  // 10^18 low bits
-            input->value.limbs[1] = 0xDE0B6B3;   // 10^18 high bits
+            for (int i = 2; i < 8; i++) input->value._limbs[i] = 0;
+            input->value._limbs[0] = 0x4A817C80;  // 10^18 low bits
+            input->value._limbs[1] = 0xDE0B6B3;   // 10^18 high bits
             break;
         }
         case 3:  // Max available (simulated)
-            for (int i = 0; i < 8; i++) input->value.limbs[i] = 0xFFFFFFFF;
+            for (int i = 0; i < 8; i++) input->value._limbs[i] = 0xFFFFFFFF;
             break;
         default:  // Random
         {
             for (int i = 0; i < 8; i++) {
-                input->value.limbs[i] = curand(rng);
+                input->value._limbs[i] = curand(rng);
             }
             break;
         }
@@ -931,39 +971,39 @@ __device__ void GPUMutationEngine::mutate_gas(mutation_input_t* input, curandSta
     uint32_t strategy = curand(rng) % 4;
 
     // Clear high bits
-    for (int i = 2; i < 8; i++) input->gas_limit.limbs[i] = 0;
+    for (int i = 2; i < 8; i++) input->gas_limit._limbs[i] = 0;
 
     switch (strategy) {
         case 0:  // Minimum gas
-            input->gas_limit.limbs[0] = 21000;
-            input->gas_limit.limbs[1] = 0;
+            input->gas_limit._limbs[0] = 21000;
+            input->gas_limit._limbs[1] = 0;
             break;
         case 1:  // Standard gas limit
-            input->gas_limit.limbs[0] = 3000000;
-            input->gas_limit.limbs[1] = 0;
+            input->gas_limit._limbs[0] = 3000000;
+            input->gas_limit._limbs[1] = 0;
             break;
         case 2:  // High gas
-            input->gas_limit.limbs[0] = 30000000;
-            input->gas_limit.limbs[1] = 0;
+            input->gas_limit._limbs[0] = 30000000;
+            input->gas_limit._limbs[1] = 0;
             break;
         default:  // Random
-            input->gas_limit.limbs[0] = curand(rng) % 50000000;
-            input->gas_limit.limbs[1] = 0;
+            input->gas_limit._limbs[0] = curand(rng) % 50000000;
+            input->gas_limit._limbs[1] = 0;
             break;
     }
 }
 
 __device__ void GPUMutationEngine::mutate_sender(mutation_input_t* input, curandState* rng) {
     // Zero high bytes (address is 20 bytes)
-    for (int i = 5; i < 8; i++) input->sender.limbs[i] = 0;
-    input->sender.limbs[4] &= 0xFFFF;  // Only low 4 bytes of limb 4
+    for (int i = 5; i < 8; i++) input->sender._limbs[i] = 0;
+    input->sender._limbs[4] &= 0xFFFF;  // Only low 4 bytes of limb 4
 
     if (dictionary_->num_addresses > 0 && (curand(rng) % 3) < 2) {
         const dictionary_entry_t* entry = dictionary_->get_random(rng, DictionaryEntryType::ADDRESS);
         if (entry && entry->length >= 20) {
             // Copy address to sender
             for (int i = 0; i < 5; i++) {
-                input->sender.limbs[i] =
+                input->sender._limbs[i] =
                     entry->data[i*4] | (entry->data[i*4+1] << 8) |
                     (entry->data[i*4+2] << 16) | (entry->data[i*4+3] << 24);
             }
@@ -973,7 +1013,7 @@ __device__ void GPUMutationEngine::mutate_sender(mutation_input_t* input, curand
 
     // Generate random sender
     for (int i = 0; i < 5; i++) {
-        input->sender.limbs[i] = curand(rng);
+        input->sender._limbs[i] = curand(rng);
     }
 }
 
@@ -982,21 +1022,21 @@ __device__ void GPUMutationEngine::mutate_block_context(mutation_input_t* input,
 
     switch (field) {
         case 0:  // Block number
-            input->block_number.limbs[0] = 15000000 + (curand(rng) % 5000000);
-            for (int i = 1; i < 8; i++) input->block_number.limbs[i] = 0;
+            input->block_number._limbs[0] = 15000000 + (curand(rng) % 5000000);
+            for (int i = 1; i < 8; i++) input->block_number._limbs[i] = 0;
             break;
         case 1:  // Timestamp
             // Current-ish timestamp
-            input->timestamp.limbs[0] = 1700000000 + (curand(rng) % 100000000);
-            for (int i = 1; i < 8; i++) input->timestamp.limbs[i] = 0;
+            input->timestamp._limbs[0] = 1700000000 + (curand(rng) % 100000000);
+            for (int i = 1; i < 8; i++) input->timestamp._limbs[i] = 0;
             break;
         case 2:  // Basefee
-            input->basefee.limbs[0] = curand(rng) % 1000000000000;  // Up to 1000 Gwei
-            for (int i = 1; i < 8; i++) input->basefee.limbs[i] = 0;
+            input->basefee._limbs[0] = curand(rng) % 1000000000000;  // Up to 1000 Gwei
+            for (int i = 1; i < 8; i++) input->basefee._limbs[i] = 0;
             break;
         case 3:  // Prevrandao
             for (int i = 0; i < 8; i++) {
-                input->prevrandao.limbs[i] = curand(rng);
+                input->prevrandao._limbs[i] = curand(rng);
             }
             break;
     }
@@ -1257,12 +1297,12 @@ __device__ void SequenceMutator::mutate_transaction(sequence_t* seq, uint32_t tx
 __device__ void SequenceMutator::mutate_sender_pattern(sequence_t* seq, curandState* rng) {
     // Apply same sender mutation across all transactions
     evm_word_t new_sender;
-    for (int i = 0; i < 5; i++) new_sender.limbs[i] = curand(rng);
-    for (int i = 5; i < 8; i++) new_sender.limbs[i] = 0;
+    for (int i = 0; i < 5; i++) new_sender._limbs[i] = curand(rng);
+    for (int i = 5; i < 8; i++) new_sender._limbs[i] = 0;
 
     for (uint32_t i = 0; i < seq->num_transactions; i++) {
         for (int j = 0; j < 8; j++) {
-            seq->transactions[i].input.sender.limbs[j] = new_sender.limbs[j];
+            seq->transactions[i].input.sender._limbs[j] = new_sender._limbs[j];
         }
     }
 }
@@ -1275,10 +1315,10 @@ __device__ void SequenceMutator::mutate_value_flow(sequence_t* seq, curandState*
 
     for (uint32_t i = 0; i < seq->num_transactions; i++) {
         uint64_t value = ascending ? (base_value + i * delta) : (base_value - i * delta);
-        seq->transactions[i].input.value.limbs[0] = value & 0xFFFFFFFF;
-        seq->transactions[i].input.value.limbs[1] = (value >> 32) & 0xFFFFFFFF;
+        seq->transactions[i].input.value._limbs[0] = value & 0xFFFFFFFF;
+        seq->transactions[i].input.value._limbs[1] = (value >> 32) & 0xFFFFFFFF;
         for (int j = 2; j < 8; j++) {
-            seq->transactions[i].input.value.limbs[j] = 0;
+            seq->transactions[i].input.value._limbs[j] = 0;
         }
     }
 }

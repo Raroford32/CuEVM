@@ -19,8 +19,8 @@ Deliver maximum‑coverage, GPU‑only fuzzing with multi‑sequence, cross‑co
 
 ## Implementation checklist (apply in order)
 1. **Fork coverage**
-   - Implement Osaka / Fulu‑Osaka (Fusaka) rules in CuEVM.
-   - Add fork‑specific test fixtures to validate opcode and precompile behavior.
+   - Implement foundry fork and remove old shits .!
+   - 
 
 2. **Coverage instrumentation**
    - Add on‑GPU counters for branches, opcodes, and storage writes.

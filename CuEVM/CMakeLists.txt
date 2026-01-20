@@ -71,6 +71,12 @@ target_link_libraries(${PROJECT_NAME} PRIVATE CGBN CuCrypto CuBigInt)
 # then the external ones
 target_link_libraries(${PROJECT_NAME} PUBLIC gmp cjson ${CUDA_LIBRARIES})
 
+# Add curand for GPU fuzzing RNG
+find_library(CURAND_LIBRARY curand HINTS ${CMAKE_CUDA_IMPLICIT_LINK_DIRECTORIES})
+if(CURAND_LIBRARY)
+    target_link_libraries(${PROJECT_NAME} PUBLIC ${CURAND_LIBRARY})
+endif()
+
 
 # Add specific NVCC flags using target_compile_options (if necessary)
 target_compile_options(${PROJECT_NAME}  PRIVATE $<$<COMPILE_LANGUAGE:CUDA>:-lineinfo --std=c++20 -rdc=true --expt-relaxed-constexpr>)
